@@ -3,6 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFinancialStore } from '../../store/useFinancialStore';
 import { formatCurrency } from '../../utils/currency';
 import { getMonth, getYear, format, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { getMonthLabel, isInMonth } from '../../utils/dates';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CHART_WIDTH = SCREEN_WIDTH - 64;
@@ -10,19 +12,18 @@ const CHART_WIDTH = SCREEN_WIDTH - 64;
 const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export default function ChartsScreen() {
-  const { transactions, budgetCategories, summary } = useFinancialStore();
+  const { transactions, budgetCategories, summary, selectedYear, selectedMonth } = useFinancialStore();
+  // The category breakdown and summary follow the month picked on the dashboard.
+  const selectedMonthLabel = getMonthLabel(selectedYear, selectedMonth);
 
   // Last 6 months spending bar chart data
   const last6Months = Array.from({ length: 6 }, (_, i) => {
     const date = subMonths(new Date(), 5 - i);
     const month = getMonth(date);
     const year = getYear(date);
-    const label = format(date, 'MMM');
+    const label = format(date, 'MMM', { locale: es });
     const total = transactions
-      .filter(t => {
-        const d = new Date(t.date);
-        return d.getMonth() === month && d.getFullYear() === year && t.type === 'expense';
-      })
+      .filter(t => t.type === 'expense' && isInMonth(t.date, year, month))
       .reduce((sum, t) => sum + t.amount, 0);
     return { label, total };
   });
@@ -74,11 +75,11 @@ export default function ChartsScreen() {
         {/* Category breakdown */}
         <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 16 }}>
           <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 16 }}>
-            Por categoría (este mes)
+            Por categoría · {selectedMonthLabel}
           </Text>
           {totalSpent === 0 ? (
             <Text style={{ color: '#475569', textAlign: 'center', paddingVertical: 20 }}>
-              Sin gastos este mes
+              Sin gastos en {selectedMonthLabel}
             </Text>
           ) : (
             <>
@@ -107,7 +108,7 @@ export default function ChartsScreen() {
         {/* Daily trend - simple text summary */}
         <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16 }}>
           <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
-            Resumen del mes
+            Resumen · {selectedMonthLabel}
           </Text>
           {summary && (
             <View style={{ gap: 8 }}>

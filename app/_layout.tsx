@@ -43,6 +43,10 @@ export default function RootLayout() {
               name="fixed-expense/new"
               options={{ presentation: 'modal', headerShown: false }}
             />
+            <Stack.Screen
+              name="import/statement"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
           </Stack>
         </AppLockGate>
       </SafeAreaProvider>

@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, AppStateStatus, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { AppState, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { authenticateWithDevice, isDeviceLockAvailable } from '../features/appLock';
+
+// Development-only escape hatch for testing on a device without unlocking after every reload or
+// system picker: start Metro with EXPO_PUBLIC_DISABLE_APP_LOCK=1. Ignored in release builds.
+const LOCK_DISABLED = __DEV__ && process.env.EXPO_PUBLIC_DISABLE_APP_LOCK === '1';
 
 export default function AppLockGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const [hasUnlocked, setHasUnlocked] = useState(false);
+  const appState = useRef<string | null | undefined>(AppState.currentState);
   const authenticating = useRef(false);
 
   const tryUnlock = useCallback(async () => {
     if (authenticating.current) return;
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || LOCK_DISABLED) {
       setUnlocked(true);
       setReady(true);
       return;
@@ -36,6 +41,7 @@ export default function AppLockGate({ children }: { children: React.ReactNode })
   }, [tryUnlock]);
 
   useEffect(() => {
+    if (LOCK_DISABLED) return;
     const sub = AppState.addEventListener('change', nextState => {
       const prev = appState.current;
       appState.current = nextState;
@@ -49,16 +55,31 @@ export default function AppLockGate({ children }: { children: React.ReactNode })
     return () => sub.remove();
   }, [tryUnlock]);
 
+  // Once unlocked, the app stays mounted and the lock screen is drawn on top of it. Unmounting it would
+  // lose navigation and screen state every time the app is backgrounded — including when a system
+  // picker (e.g. choosing a PDF to import) is opened, whose result would then never arrive.
+  useEffect(() => {
+    if (unlocked) setHasUnlocked(true);
+  }, [unlocked]);
+
   if (!ready) {
     return <View style={{ flex: 1, backgroundColor: '#0f172a' }} />;
   }
 
-  if (unlocked) {
-    return <>{children}</>;
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#0f172a', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <View style={{ flex: 1 }}>
+      {(unlocked || hasUnlocked) && children}
+      {!unlocked && <LockScreen onUnlock={tryUnlock} />}
+    </View>
+  );
+}
+
+function LockScreen({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <View style={{
+      ...StyleSheet.absoluteFill, backgroundColor: '#0f172a',
+      alignItems: 'center', justifyContent: 'center', padding: 24,
+    }}>
       <View style={{
         width: 72, height: 72, borderRadius: 36, backgroundColor: '#1e293b',
         alignItems: 'center', justifyContent: 'center', marginBottom: 20
@@ -72,7 +93,7 @@ export default function AppLockGate({ children }: { children: React.ReactNode })
         Desbloqueá con el PIN, huella o Face ID de tu dispositivo para ver tus finanzas
       </Text>
       <TouchableOpacity
-        onPress={tryUnlock}
+        onPress={onUnlock}
         style={{ backgroundColor: '#22c55e', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 24 }}
       >
         <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Desbloquear</Text>

@@ -1,4 +1,5 @@
 import { format, getDaysInMonth, getDate, getMonth, getYear, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export function nowISO(): string {
   return new Date().toISOString();
@@ -27,11 +28,25 @@ export function getDaysRemaining(referenceDate: Date = new Date()): number {
 }
 
 export function getCurrentMonthLabel(): string {
-  return format(new Date(), 'MMMM yyyy');
+  return format(new Date(), 'MMMM yyyy', { locale: es });
 }
 
 export function getMonthLabel(year: number, month: number): string {
-  return format(new Date(year, month, 1), 'MMMM yyyy');
+  return format(new Date(year, month, 1), 'MMMM yyyy', { locale: es });
+}
+
+/** 'yyyy-MM' for a year and a 0-based month. */
+export function toYearMonth(year: number, month: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Whether a 'yyyy-MM-dd' date falls in the given 0-based month. Compares the string instead of using
+ * `new Date(dateStr)`, which parses date-only strings as UTC midnight: in Argentina (UTC−3) that is
+ * still the previous day, so the 1st of each month would land in the month before.
+ */
+export function isInMonth(dateStr: string, year: number, month: number): boolean {
+  return dateStr.startsWith(toYearMonth(year, month));
 }
 
 export function currentYearMonth(): string {

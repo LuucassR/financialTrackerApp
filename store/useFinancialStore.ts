@@ -5,6 +5,7 @@ import { getAllBudgetCategories, insertBudgetCategory, updateBudgetCategory, del
 import { getAllInstallments, insertInstallment, updateInstallment, deleteInstallment, toggleInstallmentPaid } from '../database/queries/installments';
 import { getAllFixedExpenses, insertFixedExpense, deleteFixedExpense, toggleFixedExpensePaid } from '../database/queries/fixedExpenses';
 import { getAllTransactions, insertTransaction, updateTransaction, deleteTransaction } from '../database/queries/transactions';
+import { applyStatementDecisions, ImportDecision } from '../database/queries/statementImports';
 import { calculateMonthSummary } from '../features/calculations';
 import { computeRolloverUpdates, getRolloverEnrollmentCheckpoint } from '../features/rollover';
 import { syncPaymentReminders } from '../features/notifications';
@@ -25,6 +26,7 @@ interface FinancialState {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
   goToCurrentMonth: () => void;
+  goToMonth: (year: number, month: number) => void;
   addTransaction: (data: NewTransaction) => void;
   editTransaction: (id: string, data: NewTransaction) => void;
   removeTransaction: (id: string) => void;
@@ -42,6 +44,7 @@ interface FinancialState {
   addRecurringIncome: (data: NewRecurringIncome) => void;
   editRecurringIncome: (id: string, data: Partial<NewRecurringIncome>) => void;
   removeRecurringIncome: (id: string) => void;
+  importStatement: (bank: string, yearMonth: string, decisions: ImportDecision[]) => void;
 }
 
 const now = new Date();
@@ -96,6 +99,11 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   goToCurrentMonth: () => {
     const today = new Date();
     set({ selectedYear: today.getFullYear(), selectedMonth: today.getMonth() });
+    get().loadAll();
+  },
+
+  goToMonth: (year, month) => {
+    set({ selectedYear: year, selectedMonth: month });
     get().loadAll();
   },
 
@@ -196,5 +204,12 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   removeRecurringIncome: (id) => {
     deleteRecurringIncome(id);
     get().loadAll();
+  },
+
+  importStatement: (bank, yearMonth, decisions) => {
+    applyStatementDecisions(bank, yearMonth, decisions);
+    // Show the imported month, so the new movements are what the user lands on.
+    const [year, month] = yearMonth.split('-').map(Number);
+    get().goToMonth(year, month - 1);
   },
 }));

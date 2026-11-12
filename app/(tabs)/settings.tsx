@@ -112,6 +112,24 @@ export default function SettingsScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* Importar resumen bancario */}
+        <TouchableOpacity
+          onPress={() => router.push('/import/statement')}
+          style={{
+            backgroundColor: '#1e293b', borderRadius: 14, padding: 16,
+            flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20
+          }}
+        >
+          <Feather name="upload" size={20} color="#f97316" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#e2e8f0', fontSize: 15, fontWeight: '600' }}>Importar resumen Naranja X</Text>
+            <Text style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>
+              Cargá los movimientos del mes desde el PDF y confirmá los que ya tenías
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color="#475569" />
+        </TouchableOpacity>
+
         {/* Recordatorios de pago */}
         <TouchableOpacity
           onPress={remindersEnabled ? undefined : handleEnableReminders}

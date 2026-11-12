@@ -62,6 +62,22 @@ export function initDatabase() {
       updated_at TEXT NOT NULL,
       synced INTEGER NOT NULL DEFAULT 0
     );
+
+    -- One row per bank statement movement already reviewed, so re-importing a statement skips it.
+    -- Local only: not part of the Supabase sync.
+    CREATE TABLE IF NOT EXISTS statement_imports (
+      id TEXT PRIMARY KEY,
+      bank TEXT NOT NULL,
+      operation_id TEXT NOT NULL,
+      statement_month TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('imported', 'matched', 'ignored')),
+      match_source TEXT,
+      match_id TEXT,
+      date TEXT NOT NULL,
+      amount REAL NOT NULL,
+      description TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
 
   try {

@@ -43,7 +43,9 @@
         {
           "faceIDPermission": "Usá Face ID para desbloquear tus finanzas."
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

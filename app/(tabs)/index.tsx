@@ -10,7 +10,7 @@ import DailyAllowance from '../../components/DailyAllowance';
 import SectionCard from '../../components/SectionCard';
 import PlanProgress from '../../components/PlanProgress';
 import MonthNavigator from '../../components/MonthNavigator';
-import { getMonthLabel, getInstallmentNumber } from '../../utils/dates';
+import { getMonthLabel, getInstallmentNumber, isInMonth } from '../../utils/dates';
 import { getActiveInstallmentsForMonth } from '../../features/calculations';
 
 export default function DashboardScreen() {
@@ -33,10 +33,9 @@ export default function DashboardScreen() {
 
   const activeInstallments = getActiveInstallmentsForMonth(installments, selectedYear, selectedMonth);
 
-  const monthIncomeTx = transactions.filter(t => {
-    const d = new Date(t.date);
-    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear && t.type === 'income';
-  });
+  const monthIncomeTx = transactions
+    .filter(t => t.type === 'income' && isInMonth(t.date, selectedYear, selectedMonth))
+    .sort((a, b) => b.amount - a.amount);
   const incomeRows = [
     ...recurringIncomes.map(r => ({ label: r.name, amount: r.amount })),
     ...monthIncomeTx.map(t => ({ label: t.description, amount: t.amount })),
@@ -52,10 +51,7 @@ export default function DashboardScreen() {
 
   const planRows = [...expenseRows, ...savingRows, ...installmentRows, ...fixedExpenseRows];
 
-  const monthTx = transactions.filter(t => {
-    const d = new Date(t.date);
-    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear && t.type === 'expense';
-  });
+  const monthTx = transactions.filter(t => t.type === 'expense' && isInMonth(t.date, selectedYear, selectedMonth));
   const spentRows = monthTx.slice(0, 5).map(t => ({ label: t.description, amount: t.amount }));
 
   return (
@@ -88,8 +84,8 @@ export default function DashboardScreen() {
           { label: 'Cuotas', spent: summary.installmentsPaid, total: summary.installmentsTotal },
         ]} />
 
-        <SectionCard title="Ingresos" total={summary.totalIncome} rows={incomeRows} />
-        <SectionCard title="Planificado" total={summary.plannedTotal} rows={planRows} />
+        <SectionCard title="Ingresos" total={summary.totalIncome} rows={incomeRows} maxRows={6} />
+        <SectionCard title="Planificado" total={summary.plannedTotal} rows={planRows} maxRows={8} />
 
         <SectionCard
           title={isCurrentMonth ? 'Gastado este mes' : 'Gastado ese mes'}

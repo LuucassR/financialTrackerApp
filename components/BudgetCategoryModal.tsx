@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import CurrencyInput from './CurrencyInput';
 import TransactionItem from './TransactionItem';
 import { formatCurrency } from '../utils/currency';
+import { isInMonth } from '../utils/dates';
 import { CategorySpending, Transaction } from '../types';
 
 interface Props {
@@ -41,12 +42,7 @@ export default function BudgetCategoryModal({ visible, item, transactions, onClo
 
   const now = new Date();
   const categoryTransactions = transactions
-    .filter(t => {
-      const d = new Date(t.date);
-      return t.category_id === item.category.id
-        && d.getFullYear() === now.getFullYear()
-        && d.getMonth() === now.getMonth();
-    })
+    .filter(t => t.category_id === item.category.id && isInMonth(t.date, now.getFullYear(), now.getMonth()))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const limitChanged = limitInput !== '' && Number(limitInput) !== item.category.monthly_limit;

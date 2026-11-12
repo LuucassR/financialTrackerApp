@@ -31,35 +31,35 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color }) => <Feather name="home" size={TAB_ICON_SIZE} color={color} />,
+          tabBarIcon: ({ focused }) => <Feather name="home" size={TAB_ICON_SIZE} color={focused ? ACTIVE_COLOR : INACTIVE_COLOR} />,
         }}
       />
       <Tabs.Screen
         name="budget"
         options={{
           title: 'Presupuesto',
-          tabBarIcon: ({ color }) => <Feather name="pie-chart" size={TAB_ICON_SIZE} color={color} />,
+          tabBarIcon: ({ focused }) => <Feather name="pie-chart" size={TAB_ICON_SIZE} color={focused ? ACTIVE_COLOR : INACTIVE_COLOR} />,
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
           title: 'Movimientos',
-          tabBarIcon: ({ color }) => <Feather name="list" size={TAB_ICON_SIZE} color={color} />,
+          tabBarIcon: ({ focused }) => <Feather name="list" size={TAB_ICON_SIZE} color={focused ? ACTIVE_COLOR : INACTIVE_COLOR} />,
         }}
       />
       <Tabs.Screen
         name="charts"
         options={{
           title: 'Gráficos',
-          tabBarIcon: ({ color }) => <Feather name="bar-chart-2" size={TAB_ICON_SIZE} color={color} />,
+          tabBarIcon: ({ focused }) => <Feather name="bar-chart-2" size={TAB_ICON_SIZE} color={focused ? ACTIVE_COLOR : INACTIVE_COLOR} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Config',
-          tabBarIcon: ({ color }) => <Feather name="settings" size={TAB_ICON_SIZE} color={color} />,
+          tabBarIcon: ({ focused }) => <Feather name="settings" size={TAB_ICON_SIZE} color={focused ? ACTIVE_COLOR : INACTIVE_COLOR} />,
         }}
       />
     </Tabs>

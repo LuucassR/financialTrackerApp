@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useFinancialStore } from '../../store/useFinancialStore';
 import TransactionItem from '../../components/TransactionItem';
-import { formatDate } from '../../utils/dates';
+import { formatDate, isInMonth } from '../../utils/dates';
+import { formatCurrency } from '../../utils/currency';
+import MonthNavigator from '../../components/MonthNavigator';
 import { Transaction } from '../../types';
 
 interface Section {
@@ -16,7 +18,13 @@ interface Section {
 type TypeFilter = 'all' | 'expense' | 'income';
 
 export default function TransactionsScreen() {
-  const { transactions, budgetCategories, removeTransaction, summary } = useFinancialStore();
+  const {
+    transactions, budgetCategories, removeTransaction, summary,
+    selectedYear, selectedMonth, goToPreviousMonth, goToNextMonth, goToCurrentMonth,
+  } = useFinancialStore();
+  const today = new Date();
+  const isCurrentMonth = selectedYear === today.getFullYear() && selectedMonth === today.getMonth();
+  const monthTransactions = transactions.filter(t => isInMonth(t.date, selectedYear, selectedMonth));
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -24,7 +32,7 @@ export default function TransactionsScreen() {
   const expenseCategories = budgetCategories.filter(c => c.type === 'expense');
   const normalizedQuery = query.trim().toLowerCase();
 
-  const movimientos = transactions.filter(t => {
+  const movimientos = monthTransactions.filter(t => {
     if (t.type !== 'expense' && t.type !== 'income') return false;
     if (typeFilter !== 'all' && t.type !== typeFilter) return false;
     if (categoryFilter && t.category_id !== categoryFilter) return false;
@@ -49,13 +57,33 @@ export default function TransactionsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }} edges={['top', 'left', 'right']}>
-      <View style={{ padding: 16, paddingTop: 24, paddingBottom: 8 }}>
-        <Text style={{ color: '#e2e8f0', fontSize: 22, fontWeight: '700' }}>Movimientos</Text>
-        {summary && (
-          <Text style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
-            Gastado este mes: ${summary.spentSoFar.toLocaleString('es-AR')}
-          </Text>
-        )}
+      <View style={{ padding: 16, paddingTop: 24, paddingBottom: 8, flexDirection: 'row', alignItems: 'flex-start' }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: '#e2e8f0', fontSize: 22, fontWeight: '700' }}>Movimientos</Text>
+          {summary && (
+            <Text style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
+              {isCurrentMonth ? 'Gastado este mes' : 'Gastado ese mes'}: {formatCurrency(summary.spentSoFar)}
+            </Text>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push('/import/statement')}
+          accessibilityLabel="Importar resumen bancario"
+          style={{ backgroundColor: '#1e293b', borderRadius: 10, padding: 10 }}
+        >
+          <Feather name="upload" size={18} color="#f97316" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ marginBottom: 8 }}>
+        <MonthNavigator
+          year={selectedYear}
+          month={selectedMonth}
+          isCurrentMonth={isCurrentMonth}
+          onPrevious={goToPreviousMonth}
+          onNext={goToNextMonth}
+          onToday={goToCurrentMonth}
+        />
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 12 }}>
@@ -105,7 +133,8 @@ export default function TransactionsScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 16, marginBottom: 12 }}
+        style={{ flexGrow: 0, flexShrink: 0, marginBottom: 12 }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
       >
         {([
           { key: 'all', label: 'Todos' },
@@ -149,10 +178,10 @@ export default function TransactionsScreen() {
       {sections.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#475569', fontSize: 15 }}>
-            {transactions.length === 0 ? 'Sin movimientos aún' : 'No hay movimientos con este filtro'}
+            {monthTransactions.length === 0 ? 'Sin movimientos este mes' : 'No hay movimientos con este filtro'}
           </Text>
           <Text style={{ color: '#334155', fontSize: 13, marginTop: 4 }}>
-            {transactions.length === 0 ? 'Agregá tu primer gasto o ingreso' : 'Probá cambiar la búsqueda o el filtro'}
+            {monthTransactions.length === 0 ? 'Agregá un gasto o ingreso, o importá un resumen' : 'Probá cambiar la búsqueda o el filtro'}
           </Text>
         </View>
       ) : (
